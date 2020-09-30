@@ -33,7 +33,7 @@ let package = Package(
 			dependencies: ["BashfulCore"]),
 		.testTarget(
 			name: "FunTests",
-			dependencies: ["BashfulUIKit"],
+			dependencies: ["BashfulFun"],
 			path: "./Tests/FunTests"),
 	]
 )

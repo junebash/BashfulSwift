@@ -1,5 +1,3 @@
-
-
 /// Configure the provided item with the provided closure, and then return the configured item.
 /// - Parameters:
 ///   - item: Any value to be confifured
