@@ -21,19 +21,19 @@ let package = Package(
 			path: "./Tests/CoreTests"),
 
 		.target(
-			name: "BashfulUIKit",
-			dependencies: ["BashfulCore"]),
-		.testTarget(
-			name: "UIKitTests",
-			dependencies: ["BashfulUIKit"],
-			path: "./Tests/UIKitTests"),
-
-		.target(
 			name: "BashfulFun",
 			dependencies: ["BashfulCore"]),
 		.testTarget(
 			name: "FunTests",
 			dependencies: ["BashfulFun"],
 			path: "./Tests/FunTests"),
+
+		.target(
+			name: "BashfulUIKit",
+			dependencies: ["BashfulCore"]),
+		.testTarget(
+			name: "UIKitTests",
+			dependencies: ["BashfulUIKit"],
+			path: "./Tests/UIKitTests")
 	]
 )

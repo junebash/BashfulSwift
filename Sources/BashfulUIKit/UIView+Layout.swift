@@ -1,6 +1,7 @@
 #if os(iOS) || os(tvOS) || os(watchOS)
 import UIKit
 
+
 public extension UIView {
 	/// Set view's `translatesAutoResizingMaskIntoConstraints` to false
 	/// and activates the provided constraints.
@@ -115,8 +116,8 @@ public extension AutoLayoutConstrainable {
 	}
 }
 
-public extension UIView: AutoLayoutConstrainable {}
-public extension UILayoutGuide: AutoLayoutConstrainable {}
+extension UIView: AutoLayoutConstrainable {}
+extension UILayoutGuide: AutoLayoutConstrainable {}
 
 public enum LayoutSide: CaseIterable {
 	case top

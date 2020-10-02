@@ -22,7 +22,7 @@ public extension Sequence {
 	///    $0.map(providedTransform)
 	/// }
 	/// ```
-	func compactMap<T, R>(
+	func compactMapNonNil<T, R>(
 		_ transform: @escaping (T) throws -> R
 	) rethrows -> [R] where Element == T? {
 		try self.reduce(into: []) { result, optV in

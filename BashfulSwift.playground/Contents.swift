@@ -4,7 +4,7 @@ import BashfulFun
 
 
 let x = [8, nil, 4, 2, nil, nil, 23]
-let y = x.compactMap(id)
+let y = x.compactMap { $0 }
 
 func log(_ x: Any) {
 	print(x)
@@ -18,7 +18,7 @@ func log(_ x: Any) {
 
 ([[8, nil], [2, 4, nil], [23, 544, nil, 69]]
 	.flatMap {
-		$0.compactMap(String.init <?> nil)
+		$0.compactMapNonNil(String.init)
 	}.joined()
 	|> Int.init ?? 0
 ) |> log
