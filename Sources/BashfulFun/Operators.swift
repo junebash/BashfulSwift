@@ -1,3 +1,6 @@
+import BashfulCore
+
+
 // MARK: - Precedence Groups
 
 precedencegroup ParameterPipePrecedence {
@@ -9,6 +12,7 @@ precedencegroup FunctionCompositionPrecedence {
 	associativity: left
 	higherThan: ParameterPipePrecedence
 }
+
 
 // MARK: - Operators
 
@@ -43,6 +47,7 @@ postfix operator |?
 postfix operator |!
 
 postfix operator <?
+
 
 // MARK: - Implementations
 
@@ -83,11 +88,11 @@ public func <<< <A, B, C>(
 	}
 }
 
-public func <?> <A, R>(
+public func ?? <A, R>(
 	_ caseSome: @escaping (A) -> R,
 	_ caseNone: @escaping @autoclosure () -> R?
 ) -> (A?) -> R? {
-	ifNonNil(caseSome, else: caseNone())
+	ifNonNil(caseSome, else: caseNone)
 }
 
 /// Curry
@@ -129,24 +134,6 @@ public prefix func |~> <A, R>(
 	_ f: @escaping () -> (A) -> R
 ) -> (A) -> R {
 	zurry(f)
-}
-
-/// Dethrow
-public postfix func |? <A, B>(
-	_ f: @escaping (A) throws -> B
-) -> (A) -> B? {
-	{ a in
-		try? f(a)
-	}
-}
-
-/// Force-Dethrow
-public postfix func |! <A, B>(
-	_ f: @escaping (A) throws -> B
-) -> (A) -> B {
-	{ a in
-		try! f(a)
-	}
 }
 
 /// throwUnwrap

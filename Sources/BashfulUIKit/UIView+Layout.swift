@@ -1,7 +1,7 @@
 #if os(iOS) || os(tvOS) || os(watchOS)
 import UIKit
 
-extension UIView {
+public extension UIView {
 	/// Set view's `translatesAutoResizingMaskIntoConstraints` to false
 	/// and activates the provided constraints.
 	func constrain(with constraints: [NSLayoutConstraint]) {
@@ -81,7 +81,7 @@ extension UIView {
 	}
 }
 
-extension UIEdgeInsets {
+public extension UIEdgeInsets {
 	/// The total width of the horizontal insets.
 	var width: CGFloat { left + right }
 	/// The total width of the vertical insets.
@@ -90,7 +90,7 @@ extension UIEdgeInsets {
 
 
 /// An object that can be constrained via anchors.
-protocol AutoLayoutConstrainable {
+public protocol AutoLayoutConstrainable {
 	var bottomAnchor: NSLayoutYAxisAnchor { get }
 	var centerXAnchor: NSLayoutXAxisAnchor { get }
 	var centerYAnchor: NSLayoutYAxisAnchor { get }
@@ -103,7 +103,7 @@ protocol AutoLayoutConstrainable {
 	var widthAnchor: NSLayoutDimension { get }
 }
 
-extension AutoLayoutConstrainable {
+public extension AutoLayoutConstrainable {
 	func constraints(
 		from constrainable: AutoLayoutConstrainable,
 		toSides sides: Set<LayoutSide> = .all,
@@ -115,10 +115,10 @@ extension AutoLayoutConstrainable {
 	}
 }
 
-extension UIView: AutoLayoutConstrainable {}
-extension UILayoutGuide: AutoLayoutConstrainable {}
+public extension UIView: AutoLayoutConstrainable {}
+public extension UILayoutGuide: AutoLayoutConstrainable {}
 
-enum LayoutSide: CaseIterable {
+public enum LayoutSide: CaseIterable {
 	case top
 	case leading
 	case trailing
@@ -147,7 +147,7 @@ enum LayoutSide: CaseIterable {
 	}
 }
 
-extension ExpressibleByArrayLiteral where ArrayLiteralElement == LayoutSide {
+public extension ExpressibleByArrayLiteral where ArrayLiteralElement == LayoutSide {
 	static var all: Self { [.top, .leading, .trailing, .bottom] }
 }
 
