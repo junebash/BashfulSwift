@@ -1,29 +1,52 @@
-private class _TitledMatrixBase<Item, XLabel: Equatable, YLabel: Equatable> {
-	var xLabels: [XLabel]
-	var yLabels: [YLabel]
-	var items: [Item?]
-
-	init(xLabels: [XLabel], yLabels: [YLabel], items: [Item?]) {
-		self.xLabels = xLabels
-		self.yLabels = yLabels
-		self.items = items
-	}
-
-	convenience init() {
-		self.init(xLabels: [], yLabels: [], items: [])
-	}
-
-	func clone() -> _TitledMatrixBase<Item, XLabel, YLabel> {
-		_TitledMatrixBase(xLabels: xLabels, yLabels: yLabels, items: items)
-	}
+public struct TitledMatrix<Item, XLabel: Equatable, YLabel: Equatable> {
+	private var base: _Base
 }
 
-public struct TitledMatrix<Item, XLabel: Equatable, YLabel: Equatable> {
-	private typealias Base = _TitledMatrixBase<Item, XLabel, YLabel>
+// MARK: - Base
 
-	private var base: Base
+private extension TitledMatrix {
+	private class _Base {
+		var xLabels: [_Label<XLabel>]
+		var yLabels: [_Label<YLabel>]
+		var items: [Index: Item]
 
-	private mutating func uniqueBase() -> Base {
+		init(xLabels: [_Label<XLabel>], yLabels: [_Label<YLabel>], items: [Index: Item]) {
+			self.xLabels = xLabels
+			self.yLabels = yLabels
+			self.items = items
+		}
+
+		convenience init() {
+			self.init(xLabels: [], yLabels: [], items: [:])
+		}
+
+		func clone() -> _Base {
+			_Base(xLabels: xLabels, yLabels: yLabels, items: items)
+		}
+	}
+
+	private class _Label<V>: Hashable {
+		private var _value: V
+		
+		var value: V { _value }
+
+		init(_ value: V) {
+			self._value = value
+		}
+
+		static func == (
+			lhs: TitledMatrix<Item, XLabel, YLabel>._Label<V>,
+			rhs: TitledMatrix<Item, XLabel, YLabel>._Label<V>
+		) -> Bool {
+			lhs === rhs
+		}
+
+		func hash(into hasher: inout Hasher) {
+			hasher.combine(ObjectIdentifier(self))
+		}
+	}
+
+	private mutating func uniqueBase() -> _Base {
 		if !isKnownUniquelyReferenced(&base) {
 			base = base.clone()
 		}
@@ -34,75 +57,53 @@ public struct TitledMatrix<Item, XLabel: Equatable, YLabel: Equatable> {
 // MARK: - Public
 
 public extension TitledMatrix {
-	var xLabels: [XLabel] {
-		get { base.xLabels }
-		set { uniqueBase().xLabels = newValue }
-	}
-	var yLabels: [YLabel] {
-		get { base.yLabels }
-		set { uniqueBase().yLabels = newValue }
-	}
-	var items: [Item?] {
-		get { base.items }
-		set { uniqueBase().items = newValue }
+	var xLabels: [XLabel] { _xLabels.map(\.value) }
+	var yLabels: [YLabel] { _yLabels.map(\.value) }
+	var items: [Item] { base.items.values.map { $0 } }
+
+	init(xLabels: [XLabel], yLabels: [YLabel], items: [Index: Item]) {
+		self.init(
+			base: .init(
+				xLabels: xLabels.map(_Label.init),
+				yLabels: yLabels.map(_Label.init),
+				items: items))
 	}
 
-	init(_ items: [YLabel: [XLabel: Item]]) where XLabel: Hashable, YLabel: Hashable {
-		self.base = .init()
-
-		for (y, xiPair) in items {
-			let yIdx = add(newYLabel: y)
-			for (x, i) in xiPair {
-				let xIdx = add(newXLabel: x)
-				let iIdx = itemIndex(x: xIdx, y: yIdx)
-				while iIdx >= base.items.count {
-					base.items.append(nil)
-				}
-				base.items[iIdx] = i
-			}
-		}
-	}
-
-	subscript(x: XLabel, y: YLabel) -> Item? {
+	subscript(_ x: XLabel, _ y: YLabel) -> Item? {
 		get {
 			guard
-				let xIdx = xLabels.firstIndex(of: x),
-				let yIdx = yLabels.firstIndex(of: y)
+				let xIdx = _xLabels.firstIndex(of: _Label(x)),
+				let yIdx = _yLabels.firstIndex(of: _Label(y))
 			else { return nil }
-			let idx = (xLabels.count * yIdx) + xIdx
-
-			return items[idx]
+			return self[xIdx, yIdx]
 		}
 		set {
-			let xIdx = add(newXLabel: x)
-			let yIdx = add(newYLabel: y)
-			let itemIdx = itemIndex(x: xIdx, y: yIdx)
-			items[itemIdx] = newValue
+			let idx = Index(
+				x: add(newXLabel: x),
+				y: add(newYLabel: y),
+				matrix: self)
+
+			uniqueBase().items[idx] = newValue
+		}
+	}
+
+	subscript(_ x: Int, _ y: Int) -> Item? {
+		get {
+			base.items[Index(x: x, y: y, matrix: self)]
+		}
+		set {
+			uniqueBase().items[Index(x: x, y: y, matrix: self)] = newValue
 		}
 	}
 
 	@discardableResult
 	mutating func add(newXLabel: XLabel) -> Int {
-		if let idx = xLabels.firstIndex(of: newXLabel) { return idx }
-		xLabels.append(newXLabel)
-		let x = xLabels.endIndex - 1
-		for y in yLabels.indices {
-			let idx = y * (x + 1) + x
-			if idx < items.count {
-				items.insert(nil, at: idx)
-			} else {
-				items.append(nil)
-			}
-		}
-		return x
+		uniqueBase().xLabels.firstIndex(appendingIfNil: .init(newXLabel))
 	}
 
 	@discardableResult
 	mutating func add(newYLabel: YLabel) -> Int {
-		if let idx = yLabels.firstIndex(of: newYLabel) { return idx }
-		yLabels.append(newYLabel)
-		items.append(contentsOf: Array(repeating: nil, count: xLabels.count))
-		return yLabels.endIndex - 1
+		uniqueBase().yLabels.firstIndex(appendingIfNil: .init(newYLabel))
 	}
 }
 
@@ -117,7 +118,6 @@ extension TitledMatrix: Sequence {
 
 	public struct Iterator: IteratorProtocol {
 		private let matrix: TitledMatrix<Item, XLabel, YLabel>
-		private var itemIdx = 0
 		private var xIdx = 0
 		private var yIdx = 0
 
@@ -127,28 +127,26 @@ extension TitledMatrix: Sequence {
 
 		public mutating func next() -> TitledMatrix<Item, XLabel, YLabel>.Element? {
 			guard
-				xIdx < matrix.xLabels.count,
-				yIdx < matrix.yLabels.count,
-				itemIdx < matrix.items.count
+				xIdx < matrix._xLabels.count,
+				yIdx < matrix._yLabels.count
 			else { return nil }
 
 			defer {
-				itemIdx += 1
 				xIdx += 1
-				if xIdx >= matrix.xLabels.count {
+				if xIdx >= matrix._xLabels.count {
 					xIdx = 0
 					yIdx += 1
 				}
 			}
 
 			return Element(
-				item: matrix.items[itemIdx],
+				item: matrix.base.items[Index(x: xIdx, y: yIdx, matrix: matrix)],
 				xLabel: matrix.xLabels[xIdx],
 				yLabel: matrix.yLabels[yIdx])
 		}
 	}
 
-	public __consuming func makeIterator() -> Iterator {
+	public func makeIterator() -> Iterator {
 		Iterator(self)
 	}
 }
@@ -156,76 +154,60 @@ extension TitledMatrix: Sequence {
 // MARK: - Collection
 
 extension TitledMatrix: RandomAccessCollection {
-	public struct Index: Comparable, Strideable {
-		internal var itemIdx: Int
+	public struct Index: Comparable, Strideable, Hashable {
+		internal var x: Int
+		internal var y: Int
+		internal var xCount: Int
 
-		internal init(_ itemIdx: Int) {
-			self.itemIdx = itemIdx
+		internal init(x: Int, y: Int, xCount: Int) {
+			self.x = x
+			self.y = y
+			self.xCount = xCount
 		}
 
-		public static func < (
-			lhs: TitledMatrix<Item, XLabel, YLabel>.Index,
-			rhs: TitledMatrix<Item, XLabel, YLabel>.Index
-		) -> Bool {
-			lhs.itemIdx < rhs.itemIdx
+		public init(x: Int, y: Int, matrix: TitledMatrix) {
+			self.init(x: x, y: y, xCount: matrix._xLabels.count)
 		}
 
-		public func distance(to other: TitledMatrix<Item, XLabel, YLabel>.Index) -> Int {
-			other.itemIdx - self.itemIdx
+		public static func < (lhs: Index, rhs: Index) -> Bool {
+			lhs.x > rhs.x && lhs.y > rhs.y
 		}
 
-		public func advanced(by n: Int) -> TitledMatrix<Item, XLabel, YLabel>.Index {
-			Index(itemIdx + n)
+		public func distance(to other: Index) -> Int {
+			let dx = other.x - self.x
+			let dy = other.y - self.y
+			return dy * xCount + dx
+		}
+
+		public func advanced(by n: Int) -> Index {
+			let (newY, newX) = ((y * xCount + x) + n)
+				.quotientAndRemainder(dividingBy: xCount)
+
+			return Index(x: newX, y: newY, xCount: xCount)
+		}
+
+		public func hash(into hasher: inout Hasher) {
+			hasher.combine(x)
+			hasher.combine(y)
 		}
 	}
 
 	public typealias Indices = CountableRange<Index>
 
 	public var startIndex: Index {
-		Index(items.startIndex)
+		Index(x: 0, y: 0, xCount: _xLabels.count)
 	}
 
 	public var endIndex: Index {
-		Index(items.endIndex)
+		Index(x: 0, y: base.yLabels.endIndex, matrix: self)
 	}
 
 	public subscript(_ position: Index) -> Element {
 		get {
-			let (yIdx, xIdx) = position.itemIdx.quotientAndRemainder(dividingBy: xLabels.count)
-			return Element(
-				item: items[position.itemIdx],
-				xLabel: xLabels[xIdx],
-				yLabel: yLabels[yIdx])
-		}
-	}
-
-	public func index(before i: Index) -> Index {
-		Index(items.index(before: i.itemIdx))
-	}
-
-	public func index(after i: Index) -> Index {
-		Index(items.index(after: i.itemIdx))
-	}
-
-	public func distance(from start: Index, to end: Index) -> Int {
-		end.itemIdx - start.itemIdx
-	}
-}
-
-// MARK: - Literals
-
-extension TitledMatrix: ExpressibleByDictionaryLiteral {
-	public init(dictionaryLiteral elements: ((x: XLabel, y: YLabel), Item)...) {
-		base = .init()
-
-		for ((x, y), item) in elements {
-			let xIdx = add(newXLabel: x)
-			let yIdx = add(newYLabel: y)
-			let iIdx = itemIndex(x: xIdx, y: yIdx)
-			while iIdx >= items.count {
-				items.append(nil)
-			}
-			items[iIdx] = item
+			Element(
+				item: base.items[position],
+				xLabel: xLabels[position.x],
+				yLabel: yLabels[position.y])
 		}
 	}
 }
@@ -237,8 +219,13 @@ extension TitledMatrix.Element: Equatable where Item: Equatable {}
 // MARK: - Private Helpers
 
 private extension TitledMatrix {
-	func itemIndex(x: Int, y: Int) -> Int {
-		y * xLabels.count + x
+	private var _xLabels: [_Label<XLabel>] {
+		get { base.xLabels }
+		set { uniqueBase().xLabels = newValue }
+	}
+	private var _yLabels: [_Label<YLabel>] {
+		get { base.yLabels }
+		set { uniqueBase().yLabels = newValue }
 	}
 }
 

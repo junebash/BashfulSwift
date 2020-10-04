@@ -10,6 +10,7 @@ let package = Package(
 		.library(name: "BashfulCore", targets: ["BashfulCore"]),
 		.library(name: "BashfulUIKit", targets: ["BashfulUIKit"]),
 		.library(name: "BashfulFun", targets: ["BashfulFun"]),
+		.library(name: "BashfulSwiftUI", targets: ["BashfulSwiftUI"])
 	],
 	targets: [
 		.target(
@@ -34,6 +35,10 @@ let package = Package(
 		.testTarget(
 			name: "UIKitTests",
 			dependencies: ["BashfulUIKit"],
-			path: "./Tests/UIKitTests")
+			path: "./Tests/UIKitTests"),
+
+		.target(
+			name: "BashfulSwiftUI",
+			dependencies: ["BashfulCore"]),
 	]
 )
