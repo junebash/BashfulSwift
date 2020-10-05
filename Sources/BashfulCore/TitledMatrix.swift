@@ -1,4 +1,4 @@
-public struct TitledMatrix<Item, XLabel: Equatable, YLabel: Equatable> {
+public struct TitledMatrix<Item, XLabel: Hashable, YLabel: Hashable> {
 	private var base: _Base
 }
 
@@ -6,11 +6,12 @@ public struct TitledMatrix<Item, XLabel: Equatable, YLabel: Equatable> {
 
 private extension TitledMatrix {
 	private class _Base {
-		var xLabels: [_Label<XLabel>]
-		var yLabels: [_Label<YLabel>]
+		// TODO: Replace with OrderedSets
+		var xLabels: [XLabel]
+		var yLabels: [YLabel]
 		var items: [Index: Item]
 
-		init(xLabels: [_Label<XLabel>], yLabels: [_Label<YLabel>], items: [Index: Item]) {
+		init(xLabels: [XLabel], yLabels: [YLabel], items: [Index: Item]) {
 			self.xLabels = xLabels
 			self.yLabels = yLabels
 			self.items = items
@@ -25,24 +26,22 @@ private extension TitledMatrix {
 		}
 	}
 
-	private class _Label<V>: Hashable {
-		private var _value: V
-		
-		var value: V { _value }
+	private class _Label<V: Hashable>: Hashable {
+		var value: V
 
 		init(_ value: V) {
-			self._value = value
+			self.value = value
 		}
 
 		static func == (
 			lhs: TitledMatrix<Item, XLabel, YLabel>._Label<V>,
 			rhs: TitledMatrix<Item, XLabel, YLabel>._Label<V>
 		) -> Bool {
-			lhs === rhs
+			lhs.value == rhs.value
 		}
 
 		func hash(into hasher: inout Hasher) {
-			hasher.combine(ObjectIdentifier(self))
+			value.hash(into: &hasher)
 		}
 	}
 
@@ -57,23 +56,37 @@ private extension TitledMatrix {
 // MARK: - Public
 
 public extension TitledMatrix {
-	var xLabels: [XLabel] { _xLabels.map(\.value) }
-	var yLabels: [YLabel] { _yLabels.map(\.value) }
+	var xLabels: [XLabel] { base.xLabels }
+	var yLabels: [YLabel] { base.yLabels }
 	var items: [Item] { base.items.values.map { $0 } }
 
-	init(xLabels: [XLabel], yLabels: [YLabel], items: [Index: Item]) {
-		self.init(
-			base: .init(
-				xLabels: xLabels.map(_Label.init),
-				yLabels: yLabels.map(_Label.init),
-				items: items))
+	init<C: Collection>(xLabels: [XLabel], yLabels: [YLabel], elements: C) where C.Element == Element {
+		self.base = .init()
+
+		let xLookup = xLabels.enumerated().reduce(into: [XLabel: Int]()) { r, enmrt in
+			r[enmrt.element] = enmrt.offset
+		}
+		let yLookup = yLabels.enumerated().reduce(into: [YLabel: Int]()) { r, enmrt in
+			r[enmrt.element] = enmrt.offset
+		}
+
+		let items = elements.reduce(into: [Index: Item]()) { itemsByIndex, el in
+			if let item = el.item {
+				guard let x = xLookup[el.xLabel], let y = yLookup[el.yLabel] else {
+					return
+				}
+				itemsByIndex[Index(x: x, y: y, matrix: self)] = item
+			}
+		}
+		self.base.items = items
+		self.base.xLabels = xLabels
 	}
 
 	subscript(_ x: XLabel, _ y: YLabel) -> Item? {
 		get {
 			guard
-				let xIdx = _xLabels.firstIndex(of: _Label(x)),
-				let yIdx = _yLabels.firstIndex(of: _Label(y))
+				let xIdx = xLabels.firstIndex(of: x),
+				let yIdx = yLabels.firstIndex(of: y)
 			else { return nil }
 			return self[xIdx, yIdx]
 		}
@@ -98,12 +111,12 @@ public extension TitledMatrix {
 
 	@discardableResult
 	mutating func add(newXLabel: XLabel) -> Int {
-		uniqueBase().xLabels.firstIndex(appendingIfNil: .init(newXLabel))
+		uniqueBase().xLabels.firstIndex(appendingIfNil: newXLabel)
 	}
 
 	@discardableResult
 	mutating func add(newYLabel: YLabel) -> Int {
-		uniqueBase().yLabels.firstIndex(appendingIfNil: .init(newYLabel))
+		uniqueBase().yLabels.firstIndex(appendingIfNil: newYLabel)
 	}
 }
 
@@ -127,13 +140,13 @@ extension TitledMatrix: Sequence {
 
 		public mutating func next() -> TitledMatrix<Item, XLabel, YLabel>.Element? {
 			guard
-				xIdx < matrix._xLabels.count,
-				yIdx < matrix._yLabels.count
+				xIdx < matrix.xLabels.count,
+				yIdx < matrix.yLabels.count
 			else { return nil }
 
 			defer {
 				xIdx += 1
-				if xIdx >= matrix._xLabels.count {
+				if xIdx >= matrix.xLabels.count {
 					xIdx = 0
 					yIdx += 1
 				}
@@ -153,37 +166,35 @@ extension TitledMatrix: Sequence {
 
 // MARK: - Collection
 
-extension TitledMatrix: RandomAccessCollection {
-	public struct Index: Comparable, Strideable, Hashable {
+extension TitledMatrix: BidirectionalCollection {
+	public struct Index: Comparable, Hashable {
 		internal var x: Int
 		internal var y: Int
-		internal var xCount: Int
 
-		internal init(x: Int, y: Int, xCount: Int) {
-			self.x = x
-			self.y = y
-			self.xCount = xCount
+		private weak var matrixBase: TitledMatrix._Base?
+
+		internal var absoluteIndex: Int? {
+			guard let base = matrixBase else { return nil }
+			return base.xLabels.count * y + x
 		}
 
-		public init(x: Int, y: Int, matrix: TitledMatrix) {
-			self.init(x: x, y: y, xCount: matrix._xLabels.count)
+		internal init(x: Int, y: Int, matrix: TitledMatrix) {
+			self.x = x
+			self.y = y
+			self.matrixBase = matrix.base
+		}
+
+		public static func == (lhs: Index, rhs: Index) -> Bool {
+			lhs.x == rhs.x
+				&& lhs.y == rhs.y
+				&& lhs.matrixBase === rhs.matrixBase
 		}
 
 		public static func < (lhs: Index, rhs: Index) -> Bool {
-			lhs.x > rhs.x && lhs.y > rhs.y
-		}
+			guard let lai = lhs.absoluteIndex, let rai = rhs.absoluteIndex
+			else { return false }
 
-		public func distance(to other: Index) -> Int {
-			let dx = other.x - self.x
-			let dy = other.y - self.y
-			return dy * xCount + dx
-		}
-
-		public func advanced(by n: Int) -> Index {
-			let (newY, newX) = ((y * xCount + x) + n)
-				.quotientAndRemainder(dividingBy: xCount)
-
-			return Index(x: newX, y: newY, xCount: xCount)
+			return lhs.matrixBase === rhs.matrixBase && lai < rai
 		}
 
 		public func hash(into hasher: inout Hasher) {
@@ -192,14 +203,59 @@ extension TitledMatrix: RandomAccessCollection {
 		}
 	}
 
-	public typealias Indices = CountableRange<Index>
-
 	public var startIndex: Index {
-		Index(x: 0, y: 0, xCount: _xLabels.count)
+		Index(x: 0, y: 0, matrix: self)
 	}
 
 	public var endIndex: Index {
 		Index(x: 0, y: base.yLabels.endIndex, matrix: self)
+	}
+
+	public func index(before i: Index) -> Index {
+		var newX = i.x - 1
+		var newY = i.y
+		if newX < 0 {
+			newX = base.xLabels.count - 1
+			newY -= 1
+		}
+		return Index(x: newX, y: newY, matrix: self)
+	}
+
+	public func index(after i: Index) -> Index {
+		var newX = i.x + 1
+		var newY = i.y
+		if newX >= base.xLabels.count {
+			newX = 0
+			newY += 1
+		}
+		return Index(x: newX, y: newY, matrix: self)
+	}
+
+	public func distance(from start: Index, to end: Index) -> Int {
+		(end.absoluteIndex ?? 0) - (start.absoluteIndex ?? 0)
+	}
+
+	public func index(_ i: Index, offsetBy distance: Int) -> Index {
+		var newX = i.x + distance
+		var newY = i.y
+		while newX < 0 {
+			newX += xLabels.count
+			newY -= 1
+		}
+		while newX >= xLabels.count {
+			newX -= xLabels.count
+			newY += 1
+		}
+		return Index(x: newX, y: newY, matrix: self)
+	}
+
+	public func index(_ i: Index, offsetBy distance: Int, limitedBy limit: Index) -> Index? {
+		guard
+			let absI = i.absoluteIndex,
+			let absLimit = limit.absoluteIndex,
+			absI + distance < absLimit
+		else { return nil }
+		return index(i, offsetBy: distance)
 	}
 
 	public subscript(_ position: Index) -> Element {
@@ -219,13 +275,6 @@ extension TitledMatrix.Element: Equatable where Item: Equatable {}
 // MARK: - Private Helpers
 
 private extension TitledMatrix {
-	private var _xLabels: [_Label<XLabel>] {
-		get { base.xLabels }
-		set { uniqueBase().xLabels = newValue }
-	}
-	private var _yLabels: [_Label<YLabel>] {
-		get { base.yLabels }
-		set { uniqueBase().yLabels = newValue }
-	}
+
 }
 
