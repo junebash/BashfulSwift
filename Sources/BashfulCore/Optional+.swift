@@ -51,7 +51,7 @@ public extension Sequence {
 	/// ```
 	func compactMapNonNil<T, R>(
 		_ transform: @escaping (T) throws -> R
-	) rethrows -> [R] where Element == T? {
+	) rethrows -> [R] where Self.Element == T? {
 		try self.reduce(into: []) { result, optV in
 			if let v = optV {
 				try result.append(transform(v))

@@ -1,3 +1,10 @@
+public func zip<A, B, C>(
+	_ f: @escaping (A) -> B,
+	_ g: @escaping (A) -> C
+) -> (A) -> (B, C) {
+	{ a in (f(a), g(a)) }
+}
+
 public func curry<A1, A2, R>(
 	_ f: @escaping (A1, A2) -> R
 ) -> (A1) -> (A2) -> R {
