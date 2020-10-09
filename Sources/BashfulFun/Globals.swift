@@ -5,6 +5,7 @@ public func zip<A, B, C>(
 	{ a in (f(a), g(a)) }
 }
 
+
 public func curry<A1, A2, R>(
 	_ f: @escaping (A1, A2) -> R
 ) -> (A1) -> (A2) -> R {
@@ -14,6 +15,25 @@ public func curry<A1, A2, R>(
 		}
 	}
 }
+
+public func curry<A1, A2, A3, R>(
+	_ f: @escaping (A1, A2, A3) -> R
+) -> (A1) -> (A2) -> (A3) -> R {
+	{ a1 in { a2 in { a3 in f(a1, a2, a3) }}}
+}
+
+public func curry<A1, A2, A3, A4, R>(
+	_ f: @escaping (A1, A2, A3, A4) -> R
+) -> (A1) -> (A2) -> (A3) -> (A4) -> R {
+	{ a1 in { a2 in { a3 in { a4 in f(a1, a2, a3, a4) }}}}
+}
+
+public func curry<A1, A2, A3, A4, A5, R>(
+	_ f: @escaping (A1, A2, A3, A4, A5) -> R
+) -> (A1) -> (A2) -> (A3) -> (A4) -> (A5) -> R {
+	{ a1 in { a2 in { a3 in { a4 in { a5 in f(a1, a2, a3, a4, a5) }}}}}
+}
+
 
 public func uncurry<A1, A2, R>(
 	_ f: @escaping (A1) -> (A2) -> R
