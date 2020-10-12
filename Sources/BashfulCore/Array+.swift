@@ -6,3 +6,8 @@ public extension Array where Element: Equatable {
 		}()
 	}
 }
+
+
+public func ~= <S: Sequence>(sequence: S, element: S.Element) -> Bool where S.Element: Equatable {
+	sequence.contains(element)
+}
