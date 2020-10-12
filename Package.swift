@@ -25,7 +25,7 @@ let package = Package(
 
 		.target(
 			name: "BashfulCoreData",
-			dependencies: []),
+			dependencies: ["BashfulCore"]),
 
 		.target(
 			name: "BashfulFun",
