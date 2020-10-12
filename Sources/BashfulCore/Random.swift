@@ -9,7 +9,7 @@ public protocol Randomizable {
 	static func random(using generator: inout RandomNumberGenerator) -> Self
 }
 
-extension Randomizable where Self: CaseIterable, Self.AllCases == Array<Self> {
+public extension Randomizable where Self: CaseIterable, Self.AllCases == Array<Self> {
 	static func random(using generator: inout RandomNumberGenerator) -> Self {
 		allCases[Int(generator.next(upperBound: UInt64(allCases.count)))]
 	}
@@ -20,7 +20,7 @@ extension Randomizable where Self: CaseIterable, Self.AllCases == Array<Self> {
 }
 
 
-extension Date {
+public extension Date {
 	static func random(in dateInterval: DateInterval) -> Date {
 		var rng = SystemRandomNumberGenerator()
 		return random(in: dateInterval, using: &rng)

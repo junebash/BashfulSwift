@@ -21,7 +21,7 @@ public enum Either<A, B> {
 }
 
 
-extension Either {
+public extension Either {
 	var flipped: Either<B, A> {
 		switch self {
 		case .a(let a): return .b(a)
@@ -63,7 +63,7 @@ extension Either {
 }
 
 
-extension Either where A == B {
+public extension Either where A == B {
 	var unwrapped: A {
 		switch self {
 		case .a(let x), .b(let x): return x
@@ -72,7 +72,7 @@ extension Either where A == B {
 }
 
 
-extension Either where A == Void {
+public extension Either where A == Void {
 	var asOptional: B? {
 		switch self {
 		case .a: return nil
@@ -81,7 +81,7 @@ extension Either where A == Void {
 	}
 }
 
-extension Either where B == Void {
+public extension Either where B == Void {
 	var asOptional: A? {
 		switch self {
 		case .a(let a): return a
@@ -90,7 +90,7 @@ extension Either where B == Void {
 	}
 }
 
-extension Optional {
+public extension Optional {
 	var asEither: Either<Wrapped, Void> {
 		switch self {
 		case .some(let wrapped): return .a(wrapped)

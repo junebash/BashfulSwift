@@ -10,7 +10,7 @@ import Foundation
 import BashfulCore
 
 
-extension URLSession.DataTaskPublisher {
+public extension URLSession.DataTaskPublisher {
 	func validateStatusCode(
 		_ statusCodes: IndexSet = IndexSet(integersIn: 200...299)
 	) -> AnyPublisher<(data: Data?, response: HTTPURLResponse), NetworkError> {

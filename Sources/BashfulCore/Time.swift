@@ -8,7 +8,7 @@
 import Foundation
 
 
-extension Date {
+public extension Date {
 	func next(inCalendar cal: Calendar = .current) -> Date {
 		cal.date(byAdding: .day, value: 1, to: self)!
 	}
@@ -19,10 +19,14 @@ extension Date {
 	) -> DateInterval? {
 		cal.dateInterval(of: component, for: self)
 	}
+
+	static func - (lhs: Date, rhs: Date) -> TimeInterval {
+		rhs.distance(to: lhs)
+	}
 }
 
 
-extension Calendar.Component {
+public extension Calendar.Component {
 	var timeInterval: TimeInterval? {
 		switch self {
 		case .day:
@@ -43,9 +47,4 @@ extension Calendar.Component {
 			return nil
 		}
 	}
-}
-
-
-func - (lhs: Date, rhs: Date) -> TimeInterval {
-	rhs.distance(to: lhs)
 }

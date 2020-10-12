@@ -2,7 +2,7 @@
 import UIKit
 
 
-extension UIStackView {
+public extension UIStackView {
 	/// Initializes a stack view with the given parameters and arranged subviews.
 	///
 	/// - Parameters:

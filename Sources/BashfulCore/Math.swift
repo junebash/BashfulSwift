@@ -11,7 +11,7 @@ import UIKit
 import Cocoa
 #endif
 
-protocol FiniteNumeric: Numeric {
+public protocol FiniteNumeric: Numeric {
 	static var min: Self { get }
 	static var max: Self { get }
 }
@@ -28,18 +28,18 @@ extension UInt64: FiniteNumeric {}
 extension UInt: FiniteNumeric {}
 
 extension BinaryFloatingPoint where Self: FiniteNumeric {
-	static var min: Self { -.greatestFiniteMagnitude }
-	static var max: Self { .greatestFiniteMagnitude }
+	public static var min: Self { -.greatestFiniteMagnitude }
+	public static var max: Self { .greatestFiniteMagnitude }
 }
 extension Double: FiniteNumeric {}
 extension Float: FiniteNumeric {}
 extension CGFloat: FiniteNumeric {
-	static var min: Self { -.greatestFiniteMagnitude }
-	static var max: Self { .greatestFiniteMagnitude }
+	public static var min: Self { -.greatestFiniteMagnitude }
+	public static var max: Self { .greatestFiniteMagnitude }
 }
 
 
-extension ClosedRange {
+public extension ClosedRange {
 	static func atLeast<N: FiniteNumeric>(_ min: N) -> ClosedRange<N> {
 		min...N.max
 	}
@@ -50,7 +50,7 @@ extension ClosedRange {
 }
 
 
-extension TimeInterval {
+public extension TimeInterval {
 	static func minutes(_ min: Int) -> Self {
 		TimeInterval(min) * 60
 	}
@@ -69,7 +69,7 @@ extension TimeInterval {
 }
 
 
-extension DateInterval {
+public extension DateInterval {
 	static func ~= (period: DateInterval, date: Date) -> Bool {
 		period.contains(date)
 	}
