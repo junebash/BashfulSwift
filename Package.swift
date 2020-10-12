@@ -8,6 +8,7 @@ let package = Package(
 	platforms: [SupportedPlatform.iOS(.v13), SupportedPlatform.macOS(.v10_15)],
 	products: [
 		.library(name: "BashfulCore", targets: ["BashfulCore"]),
+		.library(name: "BashfulCoreData", targets: ["BashfulCoreData"]),
 		.library(name: "BashfulUIKit", targets: ["BashfulUIKit"]),
 		.library(name: "BashfulFun", targets: ["BashfulFun"]),
 		.library(name: "BashfulSwiftUI", targets: ["BashfulSwiftUI"]),
@@ -21,6 +22,10 @@ let package = Package(
 			name: "CoreTests",
 			dependencies: ["BashfulCore"],
 			path: "./Tests/CoreTests"),
+
+		.target(
+			name: "BashfulCoreData",
+			dependencies: []),
 
 		.target(
 			name: "BashfulFun",
