@@ -9,10 +9,10 @@ public protocol Fetchable {
 	) -> FetchDescriptor<Self>
 }
 
-extension Fetchable {
-	static func fetchDescriptor(
-		sortDescriptor: SortDescriptor<Self> = SortDescriptor(),
-		filterDescriptor: FilterDescriptor<Self> = FilterDescriptor(),
+extension Fetchable where Self: NSManagedObject {
+	public static func fetchDescriptor(
+		sortDescriptor: SortDescriptor<Self> = .init(),
+		filterDescriptor: FilterDescriptor<Self> = .init(),
 		sectionNameKeyPath: String? = nil
 	) -> FetchDescriptor<Self> {
 		FetchDescriptor(
