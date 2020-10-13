@@ -1,6 +1,28 @@
 import CoreData
 
 
+public protocol Fetchable {
+	static func fetchDescriptor(
+		sortDescriptor: SortDescriptor<Self>,
+		filterDescriptor: FilterDescriptor<Self>,
+		sectionNameKeyPath: String?
+	) -> FetchDescriptor<Self>
+}
+
+extension Fetchable {
+	static func fetchDescriptor(
+		sortDescriptor: SortDescriptor<Self> = SortDescriptor(),
+		filterDescriptor: FilterDescriptor<Self> = FilterDescriptor(),
+		sectionNameKeyPath: String? = nil
+	) -> FetchDescriptor<Self> {
+		FetchDescriptor(
+			sortDescriptor: sortDescriptor,
+			filterDescriptor: filterDescriptor,
+			sectionNameKeyPath: sectionNameKeyPath)
+	}
+}
+
+
 public struct FetchDescriptor<Object> {
 	public var sortDescriptor: SortDescriptor<Object>
 	public var filterDescriptor: FilterDescriptor<Object>
@@ -34,7 +56,7 @@ public struct SortDescriptor<Object> {
 
 	public init(
 		nsDescriptors: [NSSortDescriptor] = [],
-		sort: @escaping (Object, Object) -> Bool
+		sort: @escaping (Object, Object) -> Bool = { _,_ in true }
 	) {
 		self.nsDescriptors = nsDescriptors
 		self.sort = sort
@@ -48,9 +70,10 @@ public struct FilterDescriptor<Object> {
 
 	public init(
 		nsPredicate: NSPredicate = NSPredicate(value: true),
-		predicate: @escaping (Object) -> Bool
+		predicate: @escaping (Object) -> Bool = { _ in true }
 	) {
 		self.predicate = predicate
 		self.nsPredicate = nsPredicate
 	}
 }
+
